@@ -140,14 +140,14 @@ export default function SunLine() {
             step="0.001"
             value={f}
             onChange={(e) => setF(parseFloat(e.target.value))}
-            className="flex-1 min-w-[200px] cursor-pointer"
+            className="flex-1 min-w-[200px] cursor-pointer touch-none"
             aria-label="time of day"
           />
         </div>
         
         {/* Readout */}
-        <div className="text-[13px] text-gray-500 mb-2 min-h-[18px]">
-          {clock(t)} &middot; Sun in the {compass(s.az)} ({Math.round(s.az)}&deg;) &middot; {Math.round(s.elev)}&deg; above the horizon
+        <div className="text-[13px] text-gray-500 mb-2 min-h-[40px] sm:min-h-[20px] flex items-center">
+          <div>{clock(t)} &middot; Sun in the {compass(s.az)} ({Math.round(s.az)}&deg;) &middot; {Math.round(s.elev)}&deg; above the horizon</div>
         </div>
         
         {/* SVG */}
