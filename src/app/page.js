@@ -146,7 +146,7 @@ export default function SunLine() {
         </div>
         
         {/* Readout */}
-        <div className="text-[13px] text-gray-500 mb-2 min-h-[40px] sm:min-h-[20px] flex items-center">
+        <div className="text-[13px] text-gray-500 mb-2 h-[44px] sm:h-[20px]">
           <div>{clock(t)} &middot; Sun in the {compass(s.az)} ({Math.round(s.az)}&deg;) &middot; {Math.round(s.elev)}&deg; above the horizon</div>
         </div>
         
