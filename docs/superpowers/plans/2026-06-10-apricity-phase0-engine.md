@@ -1096,10 +1096,17 @@ describe('parkviewTowers data', () => {
     expect(validateProject(parkviewTowers)).toEqual([]);
   });
 
-  it('south units get more sun in summer than in winter', () => {
+  it('a south facade gets more sun in winter than summer at this latitude', () => {
     const summer = analyzeUnit(parkviewTowers, 'tower-1', { floor: 10, row: 1, col: 1 }, SUMMER);
     const winter = analyzeUnit(parkviewTowers, 'tower-1', { floor: 10, row: 1, col: 1 }, WINTER);
-    expect(summer.hours.total).toBeGreaterThan(winter.hours.total);
+    expect(winter.hours.total).toBeGreaterThan(summer.hours.total);
+  });
+
+  it('a north facade gets summer sun but effectively none in winter', () => {
+    const summer = analyzeUnit(parkviewTowers, 'tower-1', { floor: 10, row: 0, col: 1 }, SUMMER);
+    const winter = analyzeUnit(parkviewTowers, 'tower-1', { floor: 10, row: 0, col: 1 }, WINTER);
+    expect(summer.hours.total).toBeGreaterThan(2);
+    expect(winter.hours.total).toBeLessThan(0.5);
   });
 
   it('a sunny south corner beats a shaded low unit facing the neighbours', () => {
