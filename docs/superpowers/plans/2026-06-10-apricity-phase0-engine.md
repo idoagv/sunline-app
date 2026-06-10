@@ -470,9 +470,9 @@ export function isFacadeLit(sample: FacadeSample, sun: SunPosition, obstacles: O
     const d = rayPolygonDistance(origin, dir, ob.footprint);
     if (!isFinite(d) || d <= WALL_OFFSET) continue;
     const rayHeight = sample.height + d * tanE;
-    if (rayHeight < ob.top && rayHeight >= ob.base) return true;
+    if (rayHeight < ob.top && rayHeight >= ob.base) return false;
   }
-  return false;
+  return true;
 }
 ```
 
