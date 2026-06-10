@@ -11,7 +11,6 @@ import {
 } from '@/engine';
 import { parkviewTowers } from '@/engine/data/parkviewTowers';
 import { declinationFromSeason, hourToTimeLabel, compassDirection, type Season } from '@/lib/sunPageUtils';
-import SceneView from './SceneView';
 import type { UnitSystem } from '@/engine/scene/types';
 import type { Unit } from '@/engine/scene/types';
 import { useDayAnimation } from '@/hooks/useDayAnimation';
@@ -21,9 +20,10 @@ import FloorSlider from './FloorSlider';
 import UnitReadout from './UnitReadout';
 import FloorSunStrip from './FloorSunStrip';
 import SavedUnits from './SavedUnits';
+import SceneView from './SceneView';
 import { useSavedUnits, type SavedUnit } from '@/hooks/useSavedUnits';
 
-type SelectedUnit = { row: number; col: number } | null;
+type SelectedUnit = { row: number; col: number };
 
 export default function SunPage() {
   const project = parkviewTowers;
@@ -34,7 +34,7 @@ export default function SunPage() {
   const [solarHour, setSolarHour] = useState(10);
   const [season, setSeason] = useState<Season>('equinox');
   const [floor, setFloor] = useState(10);
-  const [selected, setSelected] = useState<SelectedUnit>(null);
+  const [selected, setSelected] = useState<SelectedUnit[]>([]);
   const [displayUnits, setDisplayUnits] = useState<UnitSystem>('metric');
 
   const decl = declinationFromSeason(season);
@@ -78,29 +78,41 @@ export default function SunPage() {
     [cellsLit],
   );
 
-  const analysis = useMemo(() => {
-    if (!selected) return null;
-    return analyzeUnit(project, building.id, { floor, ...selected }, decl);
-  }, [selected?.row, selected?.col, floor, decl]);
+  const toggleUnit = (row: number, col: number) => {
+    setSelected((prev) => {
+      const idx = prev.findIndex((s) => s.row === row && s.col === col);
+      if (idx >= 0) return prev.filter((_, i) => i !== idx);
+      return [...prev, { row, col }];
+    });
+  };
+
+  const analyses = useMemo(
+    () =>
+      selected.map((sel) => ({
+        sel,
+        analysis: analyzeUnit(project, building.id, { floor, ...sel }, decl),
+        isLitNow: cellsLit[sel.row]?.[sel.col] ?? false,
+        label: building.unitLabels?.[`${sel.row}-${sel.col}`],
+      })),
+    [selected, floor, decl, cellsLit],
+  );
 
   const floorStrip = useMemo(() => {
-    if (!selected) return null;
+    if (selected.length !== 1) return null;
+    const sel = selected[0];
     return Array.from({ length: maxFloor }, (_, i) => {
       const f = i + 1;
-      const r = analyzeUnit(project, building.id, { floor: f, ...selected }, decl);
+      const r = analyzeUnit(project, building.id, { floor: f, ...sel }, decl);
       return { floor: f, hours: r.hours.total, score: r.score };
     });
-  }, [selected?.row, selected?.col, decl]);
-
-  const isLitNow = selected !== null ? (cellsLit[selected.row]?.[selected.col] ?? false) : false;
-  const selectedLabel = selected ? building.unitLabels?.[`${selected.row}-${selected.col}`] : undefined;
+  }, [selected, decl]);
 
   const { units: savedUnits, toggle: toggleSaved, isSaved } = useSavedUnits(project.id);
 
   return (
-    <main className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center gap-5 pb-8">
+    <main className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center gap-4 pb-8">
       {/* Header */}
-      <header className="w-full max-w-sm px-4 pt-6 flex items-center justify-between">
+      <header className="w-full max-w-sm md:max-w-none md:px-6 px-4 pt-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">{project.name}</h1>
         <div className="flex items-center gap-3">
           <button
@@ -116,119 +128,127 @@ export default function SunPage() {
       {/* Saved units quick-pick chips */}
       <SavedUnits
         units={savedUnits}
-        onSelect={(u) => { setFloor(u.floor); setSelected({ row: u.row, col: u.col }); }}
+        onSelect={(u) => { setFloor(u.floor); setSelected([{ row: u.row, col: u.col }]); }}
         onRemove={toggleSaved}
         selectedFloor={floor}
-        selectedRow={selected?.row ?? null}
-        selectedCol={selected?.col ?? null}
+        selectedRow={selected.length === 1 ? selected[0].row : null}
+        selectedCol={selected.length === 1 ? selected[0].col : null}
       />
 
-      {/* Season + Floor controls */}
-      <div className="w-full max-w-sm px-4 flex flex-col gap-3">
-        <SeasonPicker value={season} onChange={setSeason} />
-        <FloorSlider floor={floor} maxFloor={maxFloor} onChange={setFloor} />
-      </div>
+      {/* 3-column layout */}
+      <div className="w-full flex flex-col md:flex-row md:items-start md:justify-center md:px-6 gap-4">
 
-      {/* Live sun-position readout */}
-      <p className="w-full max-w-sm px-4 -mb-2 text-xs text-slate-400">
-        {hourToTimeLabel(solarHour)} · Sun in the {compassDirection(sun.azimuth)} ({Math.round(sun.azimuth)}°) · {Math.round(sun.elevation)}° above the horizon
-      </p>
-
-      {/* Top-down scene (hero) — 2× wider on desktop */}
-      <div className="w-full max-w-sm md:max-w-3xl px-2">
-        <SceneView
-          project={project}
-          subjectBuildingId={project.subjectBuildingId}
-          cellsLit={cellsLit}
-          selected={selected}
-          onSelect={(row, col) => setSelected({ row, col })}
-          sun={sun}
-          day={day}
-          latitudeDeg={project.latitudeDeg}
-          declinationDeg={decl}
-          onDrag={scrub}
-          onDragStart={() => { if (isPlaying) toggle(); }}
-        />
-      </div>
-
-      {/* Floor-plate grid */}
-      <FloorPlateGrid
-        rows={grid.rows}
-        cols={grid.cols}
-        cells={cells}
-        selected={selected}
-        onSelect={(row, col) => setSelected({ row, col })}
-      />
-
-      {/* Day scrub controls */}
-      <div className="w-full max-w-sm px-4 flex items-center gap-3">
-        <button
-          onClick={toggle}
-          className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center text-lg flex-shrink-0"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-        >
-          {isPlaying ? '⏸' : '▶'}
-        </button>
-        <input
-          type="range"
-          min={day.sunrise}
-          max={day.sunset}
-          step={0.05}
-          value={solarHour}
-          onChange={(e) => scrub(Number(e.target.value))}
-          className="flex-1 accent-amber-500"
-        />
-        <span className="text-sm text-slate-300 w-12 text-right tabular-nums">
-          {hourToTimeLabel(solarHour)}
-        </span>
-      </div>
-
-      {/* Unit readout */}
-      {analysis && selected && (
-        <div className="w-full max-w-sm px-4 flex flex-col gap-2">
-          <UnitReadout
-            analysis={analysis}
-            isLitNow={isLitNow}
-            displayUnits={displayUnits}
-            label={selectedLabel}
-            floor={floor}
+        {/* LEFT: floor controls + unit picker */}
+        <div className="flex flex-col items-center gap-3 md:w-56 md:flex-shrink-0 md:pt-1">
+          <div className="w-full max-w-sm md:max-w-none px-4 md:px-0 flex flex-col gap-3">
+            <SeasonPicker value={season} onChange={setSeason} />
+            <FloorSlider floor={floor} maxFloor={maxFloor} onChange={setFloor} />
+          </div>
+          <FloorPlateGrid
+            rows={grid.rows}
+            cols={grid.cols}
+            cells={cells}
+            selected={selected}
+            onSelect={toggleUnit}
           />
-          <div className="flex justify-end">
+        </div>
+
+        {/* CENTER: scene view + playback */}
+        <div className="flex flex-col items-center gap-3 flex-1 min-w-0 md:max-w-3xl">
+          <p className="w-full px-4 md:px-2 text-xs text-slate-400">
+            {hourToTimeLabel(solarHour)} · Sun in the {compassDirection(sun.azimuth)} ({Math.round(sun.azimuth)}°) · {Math.round(sun.elevation)}° above the horizon
+          </p>
+          <div className="w-full px-2">
+            <SceneView
+              project={project}
+              subjectBuildingId={project.subjectBuildingId}
+              cellsLit={cellsLit}
+              selected={selected}
+              onSelect={toggleUnit}
+              sun={sun}
+              day={day}
+              latitudeDeg={project.latitudeDeg}
+              declinationDeg={decl}
+              onDrag={scrub}
+              onDragStart={() => { if (isPlaying) toggle(); }}
+            />
+          </div>
+          {/* Day scrub controls */}
+          <div className="w-full max-w-sm md:max-w-none px-4 md:px-2 flex items-center gap-3">
             <button
-              onClick={() => {
-                const u: SavedUnit = {
-                  label: selectedLabel ?? `F${floor} (${selected.row},${selected.col})`,
-                  floor,
-                  row: selected.row,
-                  col: selected.col,
-                };
-                toggleSaved(u);
-              }}
-              className={[
-                'px-3 py-1 rounded-full text-xs border transition-colors',
-                isSaved(floor, selected.row, selected.col)
-                  ? 'bg-amber-500 border-amber-500 text-white'
-                  : 'bg-slate-800 border-slate-600 text-slate-300 hover:border-amber-500',
-              ].join(' ')}
+              onClick={toggle}
+              className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center text-lg flex-shrink-0"
+              aria-label={isPlaying ? 'Pause' : 'Play'}
             >
-              {isSaved(floor, selected.row, selected.col) ? '★ Saved' : '☆ Save unit'}
+              {isPlaying ? '⏸' : '▶'}
             </button>
+            <input
+              type="range"
+              min={day.sunrise}
+              max={day.sunset}
+              step={0.05}
+              value={solarHour}
+              onChange={(e) => scrub(Number(e.target.value))}
+              className="flex-1 accent-amber-500"
+            />
+            <span className="text-sm text-slate-300 w-12 text-right tabular-nums">
+              {hourToTimeLabel(solarHour)}
+            </span>
           </div>
         </div>
-      )}
 
-      {/* Per-floor sun strip */}
-      {floorStrip && selected && (
-        <FloorSunStrip
-          data={floorStrip}
-          currentFloor={floor}
-          onFloorSelect={setFloor}
-        />
-      )}
-
-      {!selected && (
-        <p className="text-sm text-slate-500 px-4">Tap a unit to see sun details</p>
-      )}
+        {/* RIGHT: unit data tiles */}
+        <div className="flex flex-col gap-3 md:w-72 md:flex-shrink-0 px-4 md:px-0">
+          {selected.length === 0 && (
+            <p className="text-sm text-slate-500 md:pt-2">Tap a unit to see sun details</p>
+          )}
+          {analyses.map(({ sel, analysis, isLitNow, label }) => (
+            <div key={`${sel.row}-${sel.col}`} className="flex flex-col gap-2">
+              <UnitReadout
+                analysis={analysis}
+                isLitNow={isLitNow}
+                displayUnits={displayUnits}
+                label={label}
+                floor={floor}
+              />
+              <div className="flex justify-between items-center">
+                <button
+                  onClick={() => toggleUnit(sel.row, sel.col)}
+                  className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  × Remove
+                </button>
+                <button
+                  onClick={() => {
+                    const u: SavedUnit = {
+                      label: label ?? `F${floor} (${sel.row},${sel.col})`,
+                      floor,
+                      row: sel.row,
+                      col: sel.col,
+                    };
+                    toggleSaved(u);
+                  }}
+                  className={[
+                    'px-3 py-1 rounded-full text-xs border transition-colors',
+                    isSaved(floor, sel.row, sel.col)
+                      ? 'bg-amber-500 border-amber-500 text-white'
+                      : 'bg-slate-800 border-slate-600 text-slate-300 hover:border-amber-500',
+                  ].join(' ')}
+                >
+                  {isSaved(floor, sel.row, sel.col) ? '★ Saved' : '☆ Save unit'}
+                </button>
+              </div>
+            </div>
+          ))}
+          {floorStrip && (
+            <FloorSunStrip
+              data={floorStrip}
+              currentFloor={floor}
+              onFloorSelect={setFloor}
+            />
+          )}
+        </div>
+      </div>
     </main>
   );
 }

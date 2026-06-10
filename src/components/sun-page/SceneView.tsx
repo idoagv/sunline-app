@@ -27,7 +27,7 @@ interface Props {
   project: Project;
   subjectBuildingId: string;
   cellsLit: (boolean | null)[][];
-  selected: { row: number; col: number } | null;
+  selected: { row: number; col: number }[];
   onSelect: (row: number, col: number) => void;
   sun: SunPosition;
   day: DayWindow;
@@ -166,7 +166,7 @@ export default function SceneView({
           Array.from({ length: grid.cols }, (_, col) => {
             const lit = cellsLit[row]?.[col];
             const corners = cellCornersWorld(subject, row, col).map(proj.toScreen);
-            const isSel = selected?.row === row && selected?.col === col;
+            const isSel = selected.some((s) => s.row === row && s.col === col);
             const fill = isSel
               ? (lit === null ? 'rgba(148,163,184,0.06)' : lit ? '#F59E0B' : '#1e293b')
               : 'rgba(148,163,184,0.08)';

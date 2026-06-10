@@ -11,7 +11,7 @@ interface Props {
   rows: number;
   cols: number;
   cells: Cell[];
-  selected: { row: number; col: number } | null;
+  selected: { row: number; col: number }[];
   onSelect: (row: number, col: number) => void;
 }
 
@@ -49,7 +49,7 @@ export default function FloorPlateGrid({ rows, cols, cells, selected, onSelect }
       {cells.map(({ row, col, lit, label }) => {
         const x = offsetX + col * (CELL_SIZE + GAP);
         const y = offsetY + row * (CELL_SIZE + GAP);
-        const isSelected = selected?.row === row && selected?.col === col;
+        const isSelected = selected.some((s) => s.row === row && s.col === col);
         const isInterior = lit === null;
 
         const fill = isInterior ? 'url(#hatch)' : lit ? '#F59E0B' : '#1e293b';
