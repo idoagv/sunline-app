@@ -167,7 +167,9 @@ export default function SceneView({
             const lit = cellsLit[row]?.[col];
             const corners = cellCornersWorld(subject, row, col).map(proj.toScreen);
             const isSel = selected?.row === row && selected?.col === col;
-            const fill = lit === null ? 'rgba(148,163,184,0.06)' : lit ? '#F59E0B' : '#334155';
+            const fill = isSel
+              ? (lit === null ? 'rgba(148,163,184,0.06)' : lit ? '#F59E0B' : '#1e293b')
+              : 'rgba(148,163,184,0.08)';
             return (
               <polygon
                 key={`${row}-${col}`}
