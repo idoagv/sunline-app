@@ -134,8 +134,8 @@ export default function SunPage() {
         {hourToTimeLabel(solarHour)} · Sun in the {compassDirection(sun.azimuth)} ({Math.round(sun.azimuth)}°) · {Math.round(sun.elevation)}° above the horizon
       </p>
 
-      {/* Top-down scene (hero) */}
-      <div className="w-full max-w-sm px-2">
+      {/* Top-down scene (hero) — 2× wider on desktop */}
+      <div className="w-full max-w-sm md:max-w-3xl px-2">
         <SceneView
           project={project}
           subjectBuildingId={project.subjectBuildingId}
@@ -146,6 +146,8 @@ export default function SunPage() {
           day={day}
           latitudeDeg={project.latitudeDeg}
           declinationDeg={decl}
+          onDrag={scrub}
+          onDragStart={() => { if (isPlaying) toggle(); }}
         />
       </div>
 

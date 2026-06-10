@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import type { Project } from '@/engine/scene/types';
 import type { Vec2 } from '@/engine/solar/geometry';
 import { sunPosition, type SunPosition, type DayWindow } from '@/engine';
@@ -10,6 +10,7 @@ import {
   shadowPolygon,
   sunPathScreenPoints,
   cellCornersWorld,
+  azimuthToHour,
 } from '@/lib/sceneProjection';
 import { hourToTimeLabel } from '@/lib/sunPageUtils';
 
@@ -18,9 +19,9 @@ const VB_H = 580;
 const CX = 340;
 const CY = 290;
 const DIAL_R = 230;
-const RING_R = 205; // sun marker + path ring
-const FIT_R = 150; // footprints fit inside this radius
-const LABEL_R = 226; // sunrise/sunset clock labels
+const RING_R = 205;
+const FIT_R = 150;
+const LABEL_R = 226;
 
 interface Props {
   project: Project;
@@ -32,6 +33,8 @@ interface Props {
   day: DayWindow;
   latitudeDeg: number;
   declinationDeg: number;
+  onDrag?: (hour: number) => void;
+  onDragStart?: () => void;
 }
 
 const attr = (ps: Vec2[]) => ps.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
@@ -46,7 +49,12 @@ export default function SceneView({
   day,
   latitudeDeg,
   declinationDeg,
+  onDrag,
+  onDragStart,
 }: Props) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragging = useRef(false);
+
   const proj = useMemo(
     () => makeProjection(sceneBounds(project.buildings), { cx: CX, cy: CY, fitRadius: FIT_R }),
     [project],
@@ -85,13 +93,27 @@ export default function SceneView({
   const riseLabel = ringPoint(riseAz, LABEL_R, [CX, CY]);
   const setLabel = ringPoint(setAz, LABEL_R, [CX, CY]);
 
+  function pointerAzimuth(e: React.PointerEvent): number {
+    const rect = svgRef.current!.getBoundingClientRect();
+    const svgX = (e.clientX - rect.left) * (VB_W / rect.width);
+    const svgY = (e.clientY - rect.top) * (VB_H / rect.height);
+    return (Math.atan2(svgX - CX, -(svgY - CY)) * (180 / Math.PI) + 360) % 360;
+  }
+
   return (
     <svg
+      ref={svgRef}
       width="100%"
       viewBox={`0 0 ${VB_W} ${VB_H}`}
       className="max-w-full"
       role="img"
       aria-label="Top-down sun and shadow diagram"
+      onPointerMove={(e) => {
+        if (!dragging.current || !onDrag) return;
+        onDrag(azimuthToHour(pointerAzimuth(e), latitudeDeg, declinationDeg, day));
+      }}
+      onPointerUp={() => { dragging.current = false; }}
+      onPointerLeave={() => { dragging.current = false; }}
     >
       <defs>
         <clipPath id="scene-dial-clip">
@@ -161,9 +183,24 @@ export default function SceneView({
         )}
       </g>
 
-      {/* Sun marker */}
-      <g>
+      {/* Sun marker — draggable */}
+      <g
+        style={{ cursor: dragging.current ? 'grabbing' : 'grab' }}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          dragging.current = true;
+          onDragStart?.();
+        }}
+        onPointerMove={(e) => {
+          if (!dragging.current || !onDrag) return;
+          e.stopPropagation();
+          onDrag(azimuthToHour(pointerAzimuth(e), latitudeDeg, declinationDeg, day));
+        }}
+        onPointerUp={() => { dragging.current = false; }}
+      >
         <line x1={CX} y1={CY} x2={sunPt[0].toFixed(1)} y2={sunPt[1].toFixed(1)} stroke="#F59E0B" strokeWidth="0.5" strokeDasharray="2 4" opacity="0.5" />
+        {/* Invisible hit-area ring around the sun marker */}
+        <circle cx={sunPt[0].toFixed(1)} cy={sunPt[1].toFixed(1)} r="26" fill="transparent" />
         <circle cx={sunPt[0].toFixed(1)} cy={sunPt[1].toFixed(1)} r="13" fill={sunColor} stroke="#D97706" strokeWidth="1" />
       </g>
     </svg>

@@ -109,6 +109,25 @@ export function sunPathScreenPoints(
   return out;
 }
 
+export function azimuthToHour(
+  azimuthDeg: number,
+  latitudeDeg: number,
+  declinationDeg: number,
+  day: DayWindow,
+): number {
+  const riseAz = sunPosition(day.sunrise + 0.01, latitudeDeg, declinationDeg).azimuth;
+  const setAz = sunPosition(day.sunset - 0.01, latitudeDeg, declinationDeg).azimuth;
+  if (azimuthDeg <= riseAz) return day.sunrise;
+  if (azimuthDeg >= setAz) return day.sunset;
+  let lo = day.sunrise, hi = day.sunset;
+  for (let i = 0; i < 50; i++) {
+    const mid = (lo + hi) / 2;
+    if (sunPosition(mid, latitudeDeg, declinationDeg).azimuth < azimuthDeg) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 export function cellCornersWorld(
   building: Building,
   row: number,
