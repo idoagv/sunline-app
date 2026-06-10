@@ -4,6 +4,7 @@ import {
   formatHours,
   formatDistance,
   hourToTimeLabel,
+  compassDirection,
 } from './sunPageUtils';
 
 describe('declinationFromSeason', () => {
@@ -48,5 +49,18 @@ describe('hourToTimeLabel', () => {
   });
   it('formats 23.75 as "23:45"', () => {
     expect(hourToTimeLabel(23.75)).toBe('23:45');
+  });
+});
+
+describe('compassDirection', () => {
+  it('maps cardinal azimuths to compass labels', () => {
+    expect(compassDirection(0)).toBe('N');
+    expect(compassDirection(90)).toBe('E');
+    expect(compassDirection(180)).toBe('S');
+    expect(compassDirection(270)).toBe('W');
+  });
+  it('rounds to the nearest 16-point heading and wraps 360 to N', () => {
+    expect(compassDirection(45)).toBe('NE');
+    expect(compassDirection(360)).toBe('N');
   });
 });

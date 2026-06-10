@@ -20,3 +20,10 @@ export function hourToTimeLabel(hour: number): string {
   const m = Math.round((hour - h) * 60);
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
+
+const COMPASS_16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+
+export function compassDirection(azimuthDeg: number): string {
+  const idx = Math.round(((azimuthDeg % 360) + 360) % 360 / 22.5) % 16;
+  return COMPASS_16[idx];
+}
