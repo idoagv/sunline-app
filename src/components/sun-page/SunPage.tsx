@@ -7,9 +7,11 @@ import {
   classifyPosition,
   facadeSamplesForUnit,
   dayWindow,
+  sunPosition,
 } from '@/engine';
 import { parkviewTowers } from '@/engine/data/parkviewTowers';
-import { declinationFromSeason, hourToTimeLabel, type Season } from '@/lib/sunPageUtils';
+import { declinationFromSeason, hourToTimeLabel, compassDirection, type Season } from '@/lib/sunPageUtils';
+import SceneView from './SceneView';
 import type { UnitSystem } from '@/engine/scene/types';
 import type { Unit } from '@/engine/scene/types';
 import { useDayAnimation } from '@/hooks/useDayAnimation';
@@ -37,6 +39,10 @@ export default function SunPage() {
 
   const decl = declinationFromSeason(season);
   const day = useMemo(() => dayWindow(project.latitudeDeg, decl), [project.latitudeDeg, decl]);
+  const sun = useMemo(
+    () => sunPosition(solarHour, project.latitudeDeg, decl),
+    [solarHour, project.latitudeDeg, decl],
+  );
   const obstacles = useMemo(
     () => project.buildings.map((b) => ({ footprint: b.footprint, base: b.base, top: b.base + b.height })),
     [],
@@ -121,6 +127,26 @@ export default function SunPage() {
       <div className="w-full max-w-sm px-4 flex flex-col gap-3">
         <SeasonPicker value={season} onChange={setSeason} />
         <FloorSlider floor={floor} maxFloor={maxFloor} onChange={setFloor} />
+      </div>
+
+      {/* Live sun-position readout */}
+      <p className="w-full max-w-sm px-4 -mb-2 text-xs text-slate-400">
+        {hourToTimeLabel(solarHour)} · Sun in the {compassDirection(sun.azimuth)} ({Math.round(sun.azimuth)}°) · {Math.round(sun.elevation)}° above the horizon
+      </p>
+
+      {/* Top-down scene (hero) */}
+      <div className="w-full max-w-sm px-2">
+        <SceneView
+          project={project}
+          subjectBuildingId={project.subjectBuildingId}
+          cellsLit={cellsLit}
+          selected={selected}
+          onSelect={(row, col) => setSelected({ row, col })}
+          sun={sun}
+          day={day}
+          latitudeDeg={project.latitudeDeg}
+          declinationDeg={decl}
+        />
       </div>
 
       {/* Floor-plate grid */}
