@@ -151,6 +151,13 @@ export default function SunPage() {
             selected={selected}
             onSelect={toggleUnit}
           />
+          {floorStrip && (
+            <FloorSunStrip
+              data={floorStrip}
+              currentFloor={floor}
+              onFloorSelect={setFloor}
+            />
+          )}
         </div>
 
         {/* CENTER: scene view + playback */}
@@ -197,56 +204,51 @@ export default function SunPage() {
           </div>
         </div>
 
-        {/* RIGHT: unit data tiles */}
-        <div className="flex flex-col gap-3 md:w-72 md:flex-shrink-0 px-4 md:px-0">
+        {/* RIGHT: unit data tiles (3-col grid) */}
+        <div className="flex-1 min-w-0 px-4 md:px-0">
           {selected.length === 0 && (
             <p className="text-sm text-slate-500 md:pt-2">Tap a unit to see sun details</p>
           )}
-          {analyses.map(({ sel, analysis, isLitNow, label }) => (
-            <div key={`${sel.row}-${sel.col}`} className="flex flex-col gap-2">
-              <UnitReadout
-                analysis={analysis}
-                isLitNow={isLitNow}
-                displayUnits={displayUnits}
-                label={label}
-                floor={floor}
-              />
-              <div className="flex justify-between items-center">
-                <button
-                  onClick={() => toggleUnit(sel.row, sel.col)}
-                  className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
-                >
-                  × Remove
-                </button>
-                <button
-                  onClick={() => {
-                    const u: SavedUnit = {
-                      label: label ?? `F${floor} (${sel.row},${sel.col})`,
-                      floor,
-                      row: sel.row,
-                      col: sel.col,
-                    };
-                    toggleSaved(u);
-                  }}
-                  className={[
-                    'px-3 py-1 rounded-full text-xs border transition-colors',
-                    isSaved(floor, sel.row, sel.col)
-                      ? 'bg-amber-500 border-amber-500 text-white'
-                      : 'bg-slate-800 border-slate-600 text-slate-300 hover:border-amber-500',
-                  ].join(' ')}
-                >
-                  {isSaved(floor, sel.row, sel.col) ? '★ Saved' : '☆ Save unit'}
-                </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {analyses.map(({ sel, analysis, isLitNow, label }) => (
+              <div key={`${sel.row}-${sel.col}`} className="flex flex-col gap-2">
+                <UnitReadout
+                  analysis={analysis}
+                  isLitNow={isLitNow}
+                  displayUnits={displayUnits}
+                  label={label}
+                  floor={floor}
+                />
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={() => toggleUnit(sel.row, sel.col)}
+                    className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    × Remove
+                  </button>
+                  <button
+                    onClick={() => {
+                      const u: SavedUnit = {
+                        label: label ?? `F${floor} (${sel.row},${sel.col})`,
+                        floor,
+                        row: sel.row,
+                        col: sel.col,
+                      };
+                      toggleSaved(u);
+                    }}
+                    className={[
+                      'px-3 py-1 rounded-full text-xs border transition-colors',
+                      isSaved(floor, sel.row, sel.col)
+                        ? 'bg-amber-500 border-amber-500 text-white'
+                        : 'bg-slate-800 border-slate-600 text-slate-300 hover:border-amber-500',
+                    ].join(' ')}
+                  >
+                    {isSaved(floor, sel.row, sel.col) ? '★ Saved' : '☆ Save unit'}
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-          {floorStrip && (
-            <FloorSunStrip
-              data={floorStrip}
-              currentFloor={floor}
-              onFloorSelect={setFloor}
-            />
-          )}
+            ))}
+          </div>
         </div>
       </div>
     </main>

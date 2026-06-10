@@ -23,7 +23,7 @@ export default function UnitReadout({ analysis, isLitNow, displayUnits: _display
   const { facades, position, hours, score } = analysis;
 
   return (
-    <div className="w-full max-w-sm rounded-xl bg-slate-800 border border-slate-700 p-4">
+    <div className="w-full rounded-xl bg-slate-800 border border-slate-700 p-4">
       <div className="flex items-start justify-between mb-3">
         <div>
           <p className="text-base font-semibold">{label ?? `Floor ${floor}`}</p>
