@@ -33,7 +33,7 @@ export default function SunPage() {
   const [season, setSeason] = useState<Season>('equinox');
   const [floor, setFloor] = useState(10);
   const [selected, setSelected] = useState<SelectedUnit>(null);
-  const [displayUnits] = useState<UnitSystem>('metric');
+  const [displayUnits, setDisplayUnits] = useState<UnitSystem>('metric');
 
   const decl = declinationFromSeason(season);
   const day = useMemo(() => dayWindow(project.latitudeDeg, decl), [project.latitudeDeg, decl]);
@@ -96,7 +96,15 @@ export default function SunPage() {
       {/* Header */}
       <header className="w-full max-w-sm px-4 pt-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">{project.name}</h1>
-        <span className="text-xs text-slate-500">Apricity</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setDisplayUnits(displayUnits === 'metric' ? 'imperial' : 'metric')}
+            className="text-xs text-slate-400 hover:text-slate-200 border border-slate-700 rounded px-2 py-0.5 transition-colors"
+          >
+            {displayUnits === 'metric' ? 'm' : 'ft'}
+          </button>
+          <span className="text-xs text-slate-500">Apricity</span>
+        </div>
       </header>
 
       {/* Saved units quick-pick chips */}
