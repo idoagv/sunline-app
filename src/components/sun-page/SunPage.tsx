@@ -18,6 +18,8 @@ import SeasonPicker from './SeasonPicker';
 import FloorSlider from './FloorSlider';
 import UnitReadout from './UnitReadout';
 import FloorSunStrip from './FloorSunStrip';
+import SavedUnits from './SavedUnits';
+import { useSavedUnits, type SavedUnit } from '@/hooks/useSavedUnits';
 
 type SelectedUnit = { row: number; col: number } | null;
 
@@ -87,6 +89,8 @@ export default function SunPage() {
   const isLitNow = selected !== null ? (cellsLit[selected.row]?.[selected.col] ?? false) : false;
   const selectedLabel = selected ? building.unitLabels?.[`${selected.row}-${selected.col}`] : undefined;
 
+  const { units: savedUnits, toggle: toggleSaved, isSaved } = useSavedUnits(project.id);
+
   return (
     <main className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center gap-5 pb-8">
       {/* Header */}
@@ -94,6 +98,16 @@ export default function SunPage() {
         <h1 className="text-lg font-semibold">{project.name}</h1>
         <span className="text-xs text-slate-500">Apricity</span>
       </header>
+
+      {/* Saved units quick-pick chips */}
+      <SavedUnits
+        units={savedUnits}
+        onSelect={(u) => { setFloor(u.floor); setSelected({ row: u.row, col: u.col }); }}
+        onRemove={toggleSaved}
+        selectedFloor={floor}
+        selectedRow={selected?.row ?? null}
+        selectedCol={selected?.col ?? null}
+      />
 
       {/* Season + Floor controls */}
       <div className="w-full max-w-sm px-4 flex flex-col gap-3">
@@ -135,7 +149,7 @@ export default function SunPage() {
 
       {/* Unit readout */}
       {analysis && selected && (
-        <div className="w-full max-w-sm px-4">
+        <div className="w-full max-w-sm px-4 flex flex-col gap-2">
           <UnitReadout
             analysis={analysis}
             isLitNow={isLitNow}
@@ -143,6 +157,27 @@ export default function SunPage() {
             label={selectedLabel}
             floor={floor}
           />
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                const u: SavedUnit = {
+                  label: selectedLabel ?? `F${floor} (${selected.row},${selected.col})`,
+                  floor,
+                  row: selected.row,
+                  col: selected.col,
+                };
+                toggleSaved(u);
+              }}
+              className={[
+                'px-3 py-1 rounded-full text-xs border transition-colors',
+                isSaved(floor, selected.row, selected.col)
+                  ? 'bg-amber-500 border-amber-500 text-white'
+                  : 'bg-slate-800 border-slate-600 text-slate-300 hover:border-amber-500',
+              ].join(' ')}
+            >
+              {isSaved(floor, selected.row, selected.col) ? '★ Saved' : '☆ Save unit'}
+            </button>
+          </div>
         </div>
       )}
 
