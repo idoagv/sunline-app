@@ -14,6 +14,9 @@ import type { UnitSystem } from '@/engine/scene/types';
 import type { Unit } from '@/engine/scene/types';
 import { useDayAnimation } from '@/hooks/useDayAnimation';
 import FloorPlateGrid from './FloorPlateGrid';
+import SeasonPicker from './SeasonPicker';
+import FloorSlider from './FloorSlider';
+import UnitReadout from './UnitReadout';
 
 type SelectedUnit = { row: number; col: number } | null;
 
@@ -81,6 +84,7 @@ export default function SunPage() {
   }, [selected?.row, selected?.col, decl]);
 
   const isLitNow = selected !== null ? (cellsLit[selected.row]?.[selected.col] ?? false) : false;
+  const selectedLabel = selected ? building.unitLabels?.[`${selected.row}-${selected.col}`] : undefined;
 
   return (
     <main className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center gap-5 pb-8">
@@ -89,6 +93,12 @@ export default function SunPage() {
         <h1 className="text-lg font-semibold">{project.name}</h1>
         <span className="text-xs text-slate-500">Apricity</span>
       </header>
+
+      {/* Season + Floor controls */}
+      <div className="w-full max-w-sm px-4 flex flex-col gap-3">
+        <SeasonPicker value={season} onChange={setSeason} />
+        <FloorSlider floor={floor} maxFloor={maxFloor} onChange={setFloor} />
+      </div>
 
       {/* Floor-plate grid */}
       <FloorPlateGrid
@@ -122,11 +132,17 @@ export default function SunPage() {
         </span>
       </div>
 
-      {/* Debug info placeholder — removed in Task 5 */}
+      {/* Unit readout */}
       {analysis && selected && (
-        <pre className="text-xs text-slate-400 w-full max-w-sm px-4">
-          score={analysis.score} total={analysis.hours.total.toFixed(1)}h isLitNow={String(isLitNow)}
-        </pre>
+        <div className="w-full max-w-sm px-4">
+          <UnitReadout
+            analysis={analysis}
+            isLitNow={isLitNow}
+            displayUnits={displayUnits}
+            label={selectedLabel}
+            floor={floor}
+          />
+        </div>
       )}
 
       {!selected && (
