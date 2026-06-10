@@ -17,6 +17,7 @@ import FloorPlateGrid from './FloorPlateGrid';
 import SeasonPicker from './SeasonPicker';
 import FloorSlider from './FloorSlider';
 import UnitReadout from './UnitReadout';
+import FloorSunStrip from './FloorSunStrip';
 
 type SelectedUnit = { row: number; col: number } | null;
 
@@ -143,6 +144,15 @@ export default function SunPage() {
             floor={floor}
           />
         </div>
+      )}
+
+      {/* Per-floor sun strip */}
+      {floorStrip && selected && (
+        <FloorSunStrip
+          data={floorStrip}
+          currentFloor={floor}
+          onFloorSelect={setFloor}
+        />
       )}
 
       {!selected && (
