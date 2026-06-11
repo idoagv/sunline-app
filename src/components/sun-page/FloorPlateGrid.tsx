@@ -13,12 +13,13 @@ interface Props {
   cells: Cell[];
   selected: { row: number; col: number }[];
   onSelect: (row: number, col: number) => void;
+  cellSize?: number;
 }
 
-const CELL_SIZE = 72;
 const GAP = 4;
 
-export default function FloorPlateGrid({ rows, cols, cells, selected, onSelect }: Props) {
+export default function FloorPlateGrid({ rows, cols, cells, selected, onSelect, cellSize = 72 }: Props) {
+  const CELL_SIZE = cellSize;
   const gridW = cols * CELL_SIZE + (cols - 1) * GAP;
   const gridH = rows * CELL_SIZE + (rows - 1) * GAP;
   const svgW = gridW + 40;

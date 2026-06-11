@@ -99,12 +99,13 @@ export function sunPathScreenPoints(
   radius: number,
   center: Vec2,
   samples = 64,
+  azimuthOffsetDeg = 0,
 ): Vec2[] {
   const out: Vec2[] = [];
   for (let i = 0; i <= samples; i++) {
     const t = day.sunrise + (day.sunset - day.sunrise) * (i / samples);
     const s = sunPosition(t, latitudeDeg, declinationDeg);
-    out.push(ringPoint(s.azimuth, radius, center));
+    out.push(ringPoint(s.azimuth + azimuthOffsetDeg, radius, center));
   }
   return out;
 }

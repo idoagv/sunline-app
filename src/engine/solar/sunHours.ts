@@ -7,9 +7,25 @@ export interface SunHours {
   afternoon: number;
 }
 
-export function unitLitAt(samples: FacadeSample[], solarHour: number, latitudeDeg: number, declinationDeg: number, obstacles: Obstacle[]): boolean {
+/**
+ * `azimuthOffsetDeg` rotates the sun's azimuth relative to the (axis-aligned,
+ * cardinal-facade) scene. It models orienting the buildings to their real-world
+ * north: rotating the scene north by +θ on screen is equivalent to a fixed scene
+ * lit by a sun at azimuth (A + θ). Defaults to 0 (no rotation).
+ */
+export function unitLitAt(
+  samples: FacadeSample[],
+  solarHour: number,
+  latitudeDeg: number,
+  declinationDeg: number,
+  obstacles: Obstacle[],
+  azimuthOffsetDeg = 0,
+): boolean {
   const sun = sunPosition(solarHour, latitudeDeg, declinationDeg);
-  return samples.some((s) => isFacadeLit(s, sun, obstacles));
+  const adjusted = azimuthOffsetDeg
+    ? { ...sun, azimuth: sun.azimuth + azimuthOffsetDeg }
+    : sun;
+  return samples.some((s) => isFacadeLit(s, adjusted, obstacles));
 }
 
 export function sunHoursForUnit(
@@ -19,6 +35,7 @@ export function sunHoursForUnit(
   declinationDeg: number,
   obstacles: Obstacle[],
   steps = 240,
+  azimuthOffsetDeg = 0,
 ): SunHours {
   const dt = (day.sunset - day.sunrise) / steps;
   let total = 0;
@@ -26,7 +43,7 @@ export function sunHoursForUnit(
   let afternoon = 0;
   for (let i = 0; i < steps; i++) {
     const t = day.sunrise + (i + 0.5) * dt;
-    if (unitLitAt(samples, t, latitudeDeg, declinationDeg, obstacles)) {
+    if (unitLitAt(samples, t, latitudeDeg, declinationDeg, obstacles, azimuthOffsetDeg)) {
       total += dt;
       if (t < 12) morning += dt;
       else afternoon += dt;

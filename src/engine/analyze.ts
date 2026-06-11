@@ -21,7 +21,13 @@ function obstaclesFor(project: Project): Obstacle[] {
   return project.buildings.map((b) => ({ footprint: b.footprint, base: b.base, top: b.base + b.height }));
 }
 
-export function analyzeUnit(project: Project, buildingId: string, ref: UnitRef, declinationDeg: number): UnitAnalysis {
+export function analyzeUnit(
+  project: Project,
+  buildingId: string,
+  ref: UnitRef,
+  declinationDeg: number,
+  azimuthOffsetDeg = 0,
+): UnitAnalysis {
   const building = project.buildings.find((b) => b.id === buildingId);
   if (!building) throw new Error(`building "${buildingId}" not found`);
   const grid = building.unitGrid ?? { rows: 1, cols: 1 };
@@ -38,7 +44,7 @@ export function analyzeUnit(project: Project, buildingId: string, ref: UnitRef, 
   const obstacles = obstaclesFor(project);
   const day = dayWindow(project.latitudeDeg, declinationDeg);
   const hours = samples.length
-    ? sunHoursForUnit(samples, day, project.latitudeDeg, declinationDeg, obstacles)
+    ? sunHoursForUnit(samples, day, project.latitudeDeg, declinationDeg, obstacles, 240, azimuthOffsetDeg)
     : { total: 0, morning: 0, afternoon: 0 };
   return { facades, position: unit.position, hours, score: sunScore(hours.total, day) };
 }
